@@ -1,0 +1,40 @@
+{
+  "name": "radiator",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Simon Hildebrandt <simonhildebrandt@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "serve": "live-server --port=9000 --host=localhost public/",
+    "build": "browserify src/index.js -o public/index.js -t [ babelify ]",
+    "watch": "watchify src/index.js -o public/index.js -t [ babelify ]",
+    "deploy": "firebase deploy"
+  },
+  "security-notes": {
+    "lodash@^4.17.19": "https://github.com/simonhildebrandt/ccamera/network/alert/yarn.lock/lodash/open",
+    "websocket-extensions@^0.1.4": "https://github.com/simonhildebrandt/ccamera/network/alert/yarn.lock/websocket-extensions/open"
+  },
+  "dependencies": {
+    "@babel/cli": "^7.11.6",
+    "@babel/core": "^7.9.0",
+    "@babel/node": "^7.12.6",
+    "@babel/plugin-transform-react-jsx": "^7.9.4",
+    "@babel/polyfill": "^7.8.7",
+    "@babel/preset-env": "^7.9.5",
+    "axios": "^0.21.0",
+    "babelify": "^10.0.0",
+    "browserify": "^16.5.1",
+    "live-server": "^1.2.1",
+    "lodash": "^4.17.19",
+    "luxon": "^1.25.0",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-select": "^3.1.0",
+    "styled-components": "^5.2.1",
+    "watchify": "^3.11.1",
+    "websocket-extensions": "^0.1.4"
+  },
+  "devDependencies": {
+    "firebase-tools": "^8.16.2"
+  }
+}
