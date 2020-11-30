@@ -65,7 +65,7 @@ const Content = styled(Flex)`
   justify-content: flex-start;
 `
 
-const weatherAPI = "http://api.openweathermap.org/data/2.5/forecast?q=Melbourne,au&APPID=1f27fb1bc4155bed9fa77e334fdcf28c";
+const weatherAPI = "http://api.openweathermap.org/data/2.5/forecast?q=Melbourne,au&APPID=TOKEN";
 
 axios.get(weatherAPI)
   .then(response => console.log(response.data))
