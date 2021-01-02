@@ -5,10 +5,12 @@
   "author": "Simon Hildebrandt <simonhildebrandt@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "serve": "live-server --port=9000 --host=localhost public/",
+    "serve": "live-server --port=9000 --host=localhost --open=/#/for/simon_and_amanda-2059 public/",
     "build": "browserify src/index.js -o public/index.js -t [ babelify ]",
     "watch": "watchify src/index.js -o public/index.js -t [ babelify ]",
-    "deploy": "firebase deploy"
+    "deploy": "firebase deploy",
+    "encrypt": "nodecipher encrypt functions/oauth_credentials.js functions/oauth_credentials.js.encrypted",
+    "decrypt": "nodecipher decrypt functions/oauth_credentials.js.encrypted functions/oauth_credentials.js"
   },
   "security-notes": {
     "lodash@^4.17.19": "https://github.com/simonhildebrandt/ccamera/network/alert/yarn.lock/lodash/open",
@@ -24,17 +26,21 @@
     "axios": "^0.21.0",
     "babelify": "^10.0.0",
     "browserify": "^16.5.1",
+    "firebase": "^7.14.0",
     "live-server": "^1.2.1",
     "lodash": "^4.17.19",
     "luxon": "^1.25.0",
+    "navigo": "^7.1.2",
+    "node-cipher": "^6.3.3",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-minimal-auth": "simonhildebrandt/react-minimal-auth#master",
     "react-select": "^3.1.0",
     "styled-components": "^5.2.1",
     "watchify": "^3.11.1",
     "websocket-extensions": "^0.1.4"
   },
   "devDependencies": {
-    "firebase-tools": "^8.16.2"
+    "firebase-tools": "^9.1.0"
   }
 }

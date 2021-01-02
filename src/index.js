@@ -1,8 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import "@babel/polyfill";
+
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import styled, { keyframes, css } from 'styled-components'
 import { DateTime } from 'luxon';
 import axios from 'axios';
+import Navigo from 'navigo';
+
+import { useAuthChanged, MinimalAuth } from 'react-minimal-auth';
+
+import { firebaseConfig, db, auth, logout } from './firebase';
+
+import { Flex } from './styled';
+import Admin from './admin';
+import CalendarDisplay from './calendar_display';
 
 
 const lightToDark = keyframes`
@@ -11,27 +22,20 @@ const lightToDark = keyframes`
     background-color: white;
   }
   to {
-    color: white;
+    color: #222;
     background-color: black;
   }
 `
 
 const darkToLight = keyframes`
   from {
-    color: white;
+    color: #222;
     background-color: black;
   }
   to {
     color: black;
     background-color: white;
   }
-`
-
-const Flex = styled.div`
-  display: flex;
-  flex-direction: ${props => props.column ? 'column' : 'row'};
-  justify-content: ${props => props.justify || 'flex-start'};
-  align-items: center;
 `
 
 const DateBlock = styled(Flex)`
@@ -43,7 +47,7 @@ const Time = styled(DateBlock)`
 `
 
 
-const Date = styled(DateBlock)`
+const DateView = styled(DateBlock)`
   font-size: 7vw;
 `
 
@@ -65,16 +69,129 @@ const Content = styled(Flex)`
   justify-content: flex-start;
 `
 
-const weatherAPI = "http://api.openweathermap.org/data/2.5/forecast?q=Melbourne,au&APPID=TOKEN";
+const WeatherIcon = styled.div`
+  width: 12.5vw;
+  height: 12.5vw;
+  background-image: ${props => `url(https://openweathermap.org/img/wn/${props.icon}@4x.png)`};
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+`
 
-axios.get(weatherAPI)
-  .then(response => console.log(response.data))
+const WeatherItem = styled.div`
+  width: 12.5vw;
+  height: 22vw;
+  position: relative;
+`
 
-const App = () => {
+const WeatherItemTime = styled.div`
+  position: absolute;
+  top: 0;
+  left: 2vw;
+  padding: 8px;
+`
+
+const WeatherItemTemp = styled.div`
+  font-family: 'Castoro', serif;
+  font-size: 3vw;
+  text-align: center;
+`
+
+const City = styled(Flex)`
+  padding: 2vw;
+`
+
+const CityName = styled.div`
+  font-family: 'Castoro', serif;
+  font-size: 3vw;
+`
+const SunTime = styled.div``
+
+var router = new Navigo(null, true, '#');
+
+const uiConfig = {
+  signInFlow: 'popup',
+  signInOptions: [
+    auth.GoogleAuthProvider.PROVIDER_ID
+  ],
+  callbacks: {
+    // Avoid redirects after sign-in.
+    signInSuccessWithAuthResult: () => false
+  }
+};
+
+
+const WeatherSlot = ({data}) => {
+  const { weather, dt, main } = data;
+  const { temp } = main;
+  const [{icon}, ...rest] = weather;
+  const time = DateTime.fromSeconds(dt);
+  return <WeatherItem>
+    <WeatherItemTime>
+      { time.toFormat("ha").toLowerCase() }
+    </WeatherItemTime>
+    <WeatherIcon icon={icon} />
+    <WeatherItemTemp>
+      { Math.round(temp) }°C
+    </WeatherItemTemp>
+  </WeatherItem>
+}
+
+const WeatherData = ({weatherData}) => {
+  const {list, city} = weatherData;
+  const {name, sunrise, sunset} = city;
+
+  const short = list.slice(0, 16);
+
+  const render = date => DateTime.fromSeconds(date).toFormat("h:mma").toLowerCase();
+
+  return <>
+    <City justify="space-between">
+      <CityName>{city.name}</CityName>
+      <Flex>
+        <SunTime>Sunrise: {render(sunrise)}</SunTime>
+        &nbsp;-&nbsp; 
+        <SunTime>Sunset: {render(sunset)}</SunTime>
+      </Flex>
+    </City>
+    <Flex flexWrap="wrap">
+    {short.map((slot, index) => (
+      <WeatherSlot key={index} data={slot}/>
+    ))}
+    </Flex>
+  </>
+}
+
+const weatherAPI = token => `https://api.openweathermap.org/data/2.5/forecast?units=metric&q=Melbourne,au&APPID=${token}`;
+const WeatherDisplay = ({owmKey}) => {
+  const [weatherData, setWeatherData] = useState(null);
+
+  const getWeather = useCallback(() => {
+    if (!owmKey) return;
+
+    axios.get(weatherAPI(owmKey))
+      .then(response => setWeatherData(response.data));
+  });
+
+  useEffect(() => {
+    const intId = setInterval(getWeather, 60 * 60 * 1000);
+    getWeather();
+
+    return () => clearInterval(intId);
+  }, [owmKey]);
+
+  return weatherData ? <WeatherData weatherData={weatherData}/> : null;
+}
+
+
+const Display = ({firebaseData={}, showAdmin}) => {
   const [currentTime, setCurrentTime] = useState(DateTime.local());
   useEffect(() => {
-    setInterval(() => setCurrentTime(DateTime.local()), 1000)
+    const intId = setInterval(() => setCurrentTime(DateTime.local()), 1000);
+    return () => clearInterval(intId);
   }, []);
+
+  // console.log({firebaseData});
 
   const time = currentTime.toFormat("h:mm");
   const seconds = currentTime.toFormat("ss");
@@ -84,7 +201,9 @@ const App = () => {
 
   const lightTime = currentTime.hour > 6 && currentTime.hour < 18;
 
-  return <Content column light={lightTime}>
+  const { owmKey, calendarUser } = firebaseData;
+
+  return <Content column light={lightTime} align="stretch" onClick={showAdmin}>
     <Flex justify="center" row>
       <Time>{time}</Time>
       <Flex column justify="space-evenly">
@@ -93,12 +212,55 @@ const App = () => {
           <Flex>{ampm}</Flex>
         </Grey>
       </Flex>
-      <Date column>
+      <DateView column>
         <Flex>{day}</Flex>
         <Flex>{date}</Flex>
-      </Date>
+      </DateView>
     </Flex>
-  </Content>;
+
+    { owmKey && <WeatherDisplay owmKey={owmKey}/> }
+    { calendarUser && <CalendarDisplay calendarUser={calendarUser} /> }
+  </Content>
 }
 
-ReactDOM.render(<App/>, document.getElementById('app'));
+const App = () => {
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [firebaseKey, setFirebaseKey] = useState(null);
+  const [firebaseData, setFirebaseData] = useState(undefined);
+
+  useEffect(() => {
+    router
+    .on('/for/:key', function ({key}) {
+      setFirebaseKey(key);
+    })
+    .resolve();
+  }, []);
+
+  useEffect(() => {
+    if (firebaseKey) {
+      db.doc(`deployments/${firebaseKey}`)
+        .get()
+        .then(doc => setFirebaseData(doc.data()))
+        .catch(err => ({}))
+    }
+  }, [firebaseKey]);
+
+  useAuthChanged(auth, async function(newUser) {
+    if (newUser) {
+      const { displayName, email } = newUser;
+
+      const userRec = await db.collection('users').doc(newUser.uid).get();
+      if (!userRec.exists) {
+        await db.collection('users').doc(newUser.uid).set({});
+      }
+
+      db.collection('users').doc(newUser.uid).update({ displayName, email });
+    }
+  })
+    return <>
+      { showAdmin && <Admin onClose={() => setShowAdmin(false)}/> }
+      <Display firebaseData={firebaseData} showAdmin={() => setShowAdmin(true)}/>
+    </>;
+}
+
+ReactDOM.render(<MinimalAuth uiConfig={uiConfig} auth={auth}><App/></MinimalAuth>, document.getElementById('app'));
