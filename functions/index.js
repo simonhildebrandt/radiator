@@ -37,15 +37,18 @@ exports.calendar = functions.https.onRequest(async (request, response) => {
 
     const calendar = google.calendar({version: 'v3', auth});
 
-    const result = await calendar.events.list({
+    return calendar.events.list({
       calendarId: 'primary',
       timeMin: (new Date()).toISOString(),
       maxResults: 10,
       singleEvents: true,
       orderBy: 'startTime',
+    })
+    .then(result => response.json(result))
+    .catch(err => {
+      //console.log(err);
+      response.status(500).json(err);
     });
-
-    response.json(result);
   } else {
     response.status(404).json({error: "User not found"});
   }
