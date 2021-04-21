@@ -22,14 +22,14 @@ const lightToDark = keyframes`
     background-color: white;
   }
   to {
-    color: #222;
+    color: #888;
     background-color: black;
   }
 `
 
 const darkToLight = keyframes`
   from {
-    color: #222;
+    color: #888;
     background-color: black;
   }
   to {
@@ -67,6 +67,11 @@ const Content = styled(Flex)`
   height: 100%;
   animation: ${colourModeMixin};
   justify-content: flex-start;
+  overflow: hidden;
+`
+
+const Opacity = styled.div`
+  opacity: ${props => props.show ? 1 : 0.1};
 `
 
 const WeatherIcon = styled.div`
@@ -121,25 +126,25 @@ const uiConfig = {
 };
 
 
-const WeatherSlot = ({data}) => {
+const WeatherSlot = ({ data }) => {
   const { weather, dt, main } = data;
   const { temp } = main;
-  const [{icon}, ...rest] = weather;
+  const [{ icon }, ...rest] = weather;
   const time = DateTime.fromSeconds(dt);
   return <WeatherItem>
     <WeatherItemTime>
-      { time.toFormat("ha").toLowerCase() }
+      {time.toFormat("ha").toLowerCase()}
     </WeatherItemTime>
     <WeatherIcon icon={icon} />
     <WeatherItemTemp>
-      { Math.round(temp) }°C
+      {Math.round(temp)}°C
     </WeatherItemTemp>
   </WeatherItem>
 }
 
-const WeatherData = ({weatherData}) => {
-  const {list, city} = weatherData;
-  const {name, sunrise, sunset} = city;
+const WeatherData = ({ weatherData }) => {
+  const { list, city } = weatherData;
+  const { name, sunrise, sunset } = city;
 
   const short = list.slice(0, 16);
 
@@ -150,20 +155,20 @@ const WeatherData = ({weatherData}) => {
       <CityName>{city.name}</CityName>
       <Flex>
         <SunTime>Sunrise: {render(sunrise)}</SunTime>
-        &nbsp;-&nbsp; 
+        &nbsp;-&nbsp;
         <SunTime>Sunset: {render(sunset)}</SunTime>
       </Flex>
     </City>
     <Flex flexWrap="wrap">
-    {short.map((slot, index) => (
-      <WeatherSlot key={index} data={slot}/>
-    ))}
+      {short.map((slot, index) => (
+        <WeatherSlot key={index} data={slot} />
+      ))}
     </Flex>
   </>
 }
 
 const weatherAPI = token => `https://api.openweathermap.org/data/2.5/forecast?units=metric&q=Melbourne,au&APPID=${token}`;
-const WeatherDisplay = ({owmKey}) => {
+const WeatherDisplay = ({ owmKey }) => {
   const [weatherData, setWeatherData] = useState(null);
 
   const getWeather = useCallback(() => {
@@ -180,11 +185,11 @@ const WeatherDisplay = ({owmKey}) => {
     return () => clearInterval(intId);
   }, [owmKey]);
 
-  return weatherData ? <WeatherData weatherData={weatherData}/> : null;
+  return weatherData ? <WeatherData weatherData={weatherData} /> : null;
 }
 
 
-const Display = ({firebaseData={}, showAdmin}) => {
+const Display = ({ firebaseData = {}, showAdmin }) => {
   const [currentTime, setCurrentTime] = useState(DateTime.local());
   useEffect(() => {
     const intId = setInterval(() => setCurrentTime(DateTime.local()), 1000);
@@ -204,22 +209,24 @@ const Display = ({firebaseData={}, showAdmin}) => {
   const { owmKey, calendarUser } = firebaseData;
 
   return <Content column light={lightTime} align="stretch" onClick={showAdmin}>
-    <Flex justify="center" row>
-      <Time>{time}</Time>
-      <Flex column justify="space-evenly">
-        <Grey>
-          <Flex>{seconds}</Flex>
-          <Flex>{ampm}</Flex>
-        </Grey>
+    <Opacity show={lightTime}>
+      <Flex justify="center" row>
+        <Time>{time}</Time>
+        <Flex column justify="space-evenly">
+          <Grey>
+            <Flex>{seconds}</Flex>
+            <Flex>{ampm}</Flex>
+          </Grey>
+        </Flex>
+        <DateView column>
+          <Flex>{day}</Flex>
+          <Flex>{date}</Flex>
+        </DateView>
       </Flex>
-      <DateView column>
-        <Flex>{day}</Flex>
-        <Flex>{date}</Flex>
-      </DateView>
-    </Flex>
 
-    { owmKey && <WeatherDisplay owmKey={owmKey}/> }
-    { calendarUser && <CalendarDisplay calendarUser={calendarUser} /> }
+      {owmKey && <WeatherDisplay owmKey={owmKey} />}
+      {calendarUser && <CalendarDisplay calendarUser={calendarUser} />}
+    </Opacity>
   </Content>
 }
 
@@ -230,10 +237,10 @@ const App = () => {
 
   useEffect(() => {
     router
-    .on('/for/:key', function ({key}) {
-      setFirebaseKey(key);
-    })
-    .resolve();
+      .on('/for/:key', function ({ key }) {
+        setFirebaseKey(key);
+      })
+      .resolve();
   }, []);
 
   useEffect(() => {
@@ -245,7 +252,7 @@ const App = () => {
     }
   }, [firebaseKey]);
 
-  useAuthChanged(auth, async function(newUser) {
+  useAuthChanged(auth, async function (newUser) {
     if (newUser) {
       const { displayName, email } = newUser;
 
@@ -257,10 +264,10 @@ const App = () => {
       db.collection('users').doc(newUser.uid).update({ displayName, email });
     }
   })
-    return <>
-      { showAdmin && <Admin onClose={() => setShowAdmin(false)}/> }
-      <Display firebaseData={firebaseData} showAdmin={() => setShowAdmin(true)}/>
-    </>;
+  return <>
+    { showAdmin && <Admin onClose={() => setShowAdmin(false)} />}
+    <Display firebaseData={firebaseData} showAdmin={() => setShowAdmin(true)} />
+  </>;
 }
 
-ReactDOM.render(<MinimalAuth uiConfig={uiConfig} auth={auth}><App/></MinimalAuth>, document.getElementById('app'));
+ReactDOM.render(<MinimalAuth uiConfig={uiConfig} auth={auth}><App /></MinimalAuth>, document.getElementById('app'));

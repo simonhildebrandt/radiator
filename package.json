@@ -5,7 +5,7 @@
   "author": "Simon Hildebrandt <simonhildebrandt@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "serve": "live-server --port=9000 --host=localhost --open=/#/for/simon_and_amanda-2059 public/",
+    "serve": "live-server --port=9000 --host=localhost --open=/#/for/simon_and_amanda-3 public/",
     "build": "browserify src/index.js -o public/index.js -t [ babelify ]",
     "watch": "watchify src/index.js -o public/index.js -t [ babelify ]",
     "deploy": "firebase deploy",

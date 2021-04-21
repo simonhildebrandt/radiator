@@ -31,11 +31,14 @@ exports.calendar = functions.https.onRequest(async (request, response) => {
   if (userOb.exists) {
     const user = userOb.data();
     const { calendarRefreshToken } = user;
+    console.log({calendarRefreshToken})
 
     const auth = getClient();
     auth.setCredentials({refresh_token: calendarRefreshToken});
 
     const calendar = google.calendar({version: 'v3', auth});
+
+    console.log("Getting calendar data!");
 
     return calendar.events.list({
       calendarId: 'primary',

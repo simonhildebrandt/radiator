@@ -26,6 +26,12 @@ const DayTitle = styled(Flex)`
 
 const Events = styled(Flex)`
   font-size: 4vw;
+  flex-wrap: wrap;
+  gap: 5vw;
+`
+
+const Event = styled(Flex)`
+  min-width: 25vw;
 `
 
 function buildCalendarData(items) {
@@ -35,10 +41,10 @@ function buildCalendarData(items) {
 
   const days = [];
 
-  while(true) {
+  while (true) {
     let label = current.weekdayLong;
     if (current.equals(today)) label = "Today";
-    if (current.equals(today.plus({days: 1}))) label = "Tomorrow";
+    if (current.equals(today.plus({ days: 1 }))) label = "Tomorrow";
 
     const events = [];
 
@@ -51,18 +57,18 @@ function buildCalendarData(items) {
       if (event.start.date) { // daylong / range
 
         const start = DateTime.fromISO(event.start.date).startOf("day");
-        const end = DateTime.fromISO(event.end.date).minus({days: 1}).endOf("day");
-        const interval = new Interval({start, end});
+        const end = DateTime.fromISO(event.end.date).minus({ days: 1 }).endOf("day");
+        const interval = new Interval({ start, end });
 
         if (interval.contains(current)) {
-          events.push({summary: event.summary});
+          events.push({ summary: event.summary });
         }
       } else { // timed
         const eventStart = DateTime.fromISO(event.start.dateTime);
 
         if (dayInterval.contains(eventStart)) {
           events.push({
-            summary: event.summary, 
+            summary: event.summary,
             time: eventStart.toFormat("h:mma").toLowerCase()
           });
         }
@@ -70,13 +76,13 @@ function buildCalendarData(items) {
     });
 
     days.push({
-      day: {label: label},
+      day: { label: label },
       events
     });
 
-    if (current > today.plus({days: 5})) break;
-    
-    current = current.plus({days: 1});
+    if (current > today.plus({ days: 5 })) break;
+
+    current = current.plus({ days: 1 });
   }
 
   return days;
@@ -84,12 +90,12 @@ function buildCalendarData(items) {
 
 const calendarUrl = "https://us-central1-radiator-c38a6.cloudfunctions.net/calendar";
 
-export default function ({calendarUser}) {
+export default function ({ calendarUser }) {
   const [calendarData, setCalendarData] = useState(null);
 
   const call = useCallback(() => {
-    axios.get(calendarUrl + `?userId=${calendarUser}`, {crossDomain: true})
-    .then(resp => setCalendarData(buildCalendarData(resp.data.data.items)));
+    axios.get(calendarUrl + `?userId=${calendarUser}`, { crossDomain: true })
+      .then(resp => setCalendarData(buildCalendarData(resp.data.data.items)));
   });
 
   useEffect(() => {
@@ -105,7 +111,7 @@ export default function ({calendarUser}) {
   if (!calendarData) return null;
 
   return <Flex column align="flex-start">
-    { calendarData.map(({day, events}, index) => (
+    {calendarData.map(({ day, events }, index) => (
       <div key={index}>
         { events.length > 0 &&
           <Day column align="flex-start">
@@ -113,10 +119,10 @@ export default function ({calendarUser}) {
               <DayTitle>{day.label}</DayTitle>
             </DayLabel>
             <Events>
-              { events.map(({summary, time}, index) => (
-                <Flex key={index}>
+              {events.map(({ summary, time }, index) => (
+                <Event key={index}>
                   {summary} { time && `(${time})`}
-                </Flex>
+                </Event>
               ))}
             </Events>
           </Day>
