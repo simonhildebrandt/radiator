@@ -168,7 +168,7 @@ const WeatherData = ({ weatherData }) => {
 }
 
 const weatherAPI = token => `https://api.openweathermap.org/data/2.5/forecast?units=metric&q=Melbourne,au&APPID=${token}`;
-const WeatherDisplay = ({ owmKey }) => {
+const WeatherDisplay = ({ owmKey, updateLightRange }) => {
   const [weatherData, setWeatherData] = useState(null);
 
   const getWeather = useCallback(() => {
@@ -177,6 +177,17 @@ const WeatherDisplay = ({ owmKey }) => {
     axios.get(weatherAPI(owmKey))
       .then(response => setWeatherData(response.data));
   });
+
+  useEffect(() => {
+    const { city: { sunrise, sunset } = {} } = weatherData || {};
+
+    if (sunrise && sunset ) {
+      updateLightRange(
+        DateTime.fromSeconds(sunrise),
+        DateTime.fromSeconds(sunset)
+      )
+    }
+  }, [weatherData]);
 
   useEffect(() => {
     const intId = setInterval(getWeather, 60 * 60 * 1000);
@@ -196,6 +207,15 @@ const Display = ({ firebaseData = {}, showAdmin }) => {
     return () => clearInterval(intId);
   }, []);
 
+  const [sunrise, setSunrise] = useState(DateTime.fromObject({hour: 6}));
+  const [sunset, setSunset] = useState(DateTime.fromObject({hour: 18}));
+
+  const updateLightRange = useCallback((sunrise, sunset) => {
+    setSunrise(sunrise);
+    setSunset(sunset);
+  });
+
+  //console.log(sunrise.toString(), sunset.toString());
   // console.log({firebaseData});
 
   const time = currentTime.toFormat("h:mm");
@@ -204,7 +224,7 @@ const Display = ({ firebaseData = {}, showAdmin }) => {
   const day = currentTime.toFormat("cccc");
   const date = currentTime.toLocaleString(DateTime.DATE_SHORT);
 
-  const lightTime = currentTime.hour > 6 && currentTime.hour < 18;
+  const lightTime = currentTime > sunrise && currentTime < sunset;
 
   const { owmKey, calendarUser } = firebaseData;
 
@@ -224,7 +244,7 @@ const Display = ({ firebaseData = {}, showAdmin }) => {
         </DateView>
       </Flex>
 
-      {owmKey && <WeatherDisplay owmKey={owmKey} />}
+      {owmKey && <WeatherDisplay owmKey={owmKey}  updateLightRange={updateLightRange} />}
       {calendarUser && <CalendarDisplay calendarUser={calendarUser} />}
     </Opacity>
   </Content>
