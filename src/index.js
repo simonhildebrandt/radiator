@@ -207,8 +207,11 @@ const Display = ({ firebaseData = {}, showAdmin }) => {
     return () => clearInterval(intId);
   }, []);
 
-  const [sunrise, setSunrise] = useState(DateTime.fromObject({hour: 6}));
-  const [sunset, setSunset] = useState(DateTime.fromObject({hour: 18}));
+  const defaultSunrise = DateTime.fromObject({hour: 7});
+  const defaultSunset = DateTime.fromObject({hour: 19});
+
+  const [sunrise, setSunrise] = useState(defaultSunrise);
+  const [sunset, setSunset] = useState(defaultSunset);
 
   const updateLightRange = useCallback((sunrise, sunset) => {
     setSunrise(sunrise);
@@ -224,7 +227,12 @@ const Display = ({ firebaseData = {}, showAdmin }) => {
   const day = currentTime.toFormat("cccc");
   const date = currentTime.toLocaleString(DateTime.DATE_SHORT);
 
-  const lightTime = currentTime > sunrise && currentTime < sunset;
+  const lightTime = (
+    currentTime > sunrise &&
+    currentTime < sunset &&
+    currentTime > defaultSunrise &&
+    currentTime < defaultSunset
+  );
 
   const { owmKey, calendarUser } = firebaseData;
 
