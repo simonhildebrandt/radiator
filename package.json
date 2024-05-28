@@ -42,6 +42,6 @@
     "websocket-extensions": "^0.1.4"
   },
   "devDependencies": {
-    "firebase-tools": "^9.1.0"
+    "firebase-tools": "13.7.3"
   }
 }
